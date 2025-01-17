@@ -1,4 +1,4 @@
-package com.PickOne.domain.preference.dto;
+package com.PickOne.domain.preference.dto.request;
 
 import com.PickOne.domain.preference.model.UserInstrument;
 import com.PickOne.domain.preference.model.entity.Instrument;

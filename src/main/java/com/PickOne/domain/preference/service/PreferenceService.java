@@ -1,8 +1,9 @@
 package com.PickOne.domain.preference.service;
 
-import com.PickOne.domain.preference.dto.PreferenceRegisterDto;
-import com.PickOne.domain.preference.dto.UserGenreRequestDto;
-import com.PickOne.domain.preference.dto.UserInstrumentRequestDto;
+import com.PickOne.domain.preference.dto.request.PreferenceRegisterDto;
+import com.PickOne.domain.preference.dto.request.UserGenreRequestDto;
+import com.PickOne.domain.preference.dto.request.UserInstrumentRequestDto;
+import com.PickOne.domain.preference.dto.response.PreferenceDetailDto;
 import com.PickOne.domain.preference.dto.response.PreferenceResponseDto;
 import com.PickOne.domain.preference.model.UserGenre;
 import com.PickOne.domain.preference.model.UserInstrument;
@@ -43,6 +44,18 @@ public class PreferenceService {
         return PreferenceResponseDto.fromEntity(preference);
     }
 
+    @Transactional
+    public PreferenceDetailDto getPreferenceDetail(Long preferenceId) {
+        PreferenceDetailDto preferenceDetailDto = preferenceRepository.findPreferenceDetailById(preferenceId);
+        return preferenceDetailDto;
+    }
+
+    @Transactional
+    public List<PreferenceDetailDto> getAllPreferenceDetail() {
+        List<PreferenceDetailDto> preferenceDetailDtoList = preferenceRepository.findAllPreferenceDetail();
+        return preferenceDetailDtoList;
+    }
+
 
     @Transactional
     public void registerPreference(
@@ -72,7 +85,7 @@ public class PreferenceService {
         Preference preference = preferenceRepository.findByMemberMemberId(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
 
-        List<UserInstrument> userInstruments =userInstrumentRequestDto.toEntityList(member,preference);
+        List<UserInstrument> userInstruments = userInstrumentRequestDto.toEntityList(member, preference);
         userInstrumentRepository.saveAll(userInstruments);
     }
 
@@ -88,7 +101,6 @@ public class PreferenceService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
 
         List<UserGenre> userGenres = userGenreRequestDto.toEntityList(member, preference);
-
 
         userGenreRepository.saveAll(userGenres);
     }

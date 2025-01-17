@@ -15,21 +15,26 @@ public class PickOneApplication {
     }
 
     @Bean
-    public CommandLineRunner initTestUser(MemberRepository memberRepository) {
+    public CommandLineRunner initTestUsers(MemberRepository memberRepository) {
         return args -> {
-            if (memberRepository.findByLoginId("testUser").isEmpty()) {
-                Member testUser = Member.builder()
-                        .loginId("testUser")
-                        .password("password123") // 기본 비밀번호 설정 (암호화 고려 필요)
-                        .username("Test User")
-                        .email("testuser@example.com")
-                        .nickname("Tester")
-                        .build();
-                memberRepository.save(testUser);
-                System.out.println("Test user created: " + testUser.getLoginId());
-            } else {
-                System.out.println("Test user already exists.");
-            }
+            createUserIfNotExists(memberRepository, "testUser", "password123", "Test User", "testuser@example.com", "Tester");
+            createUserIfNotExists(memberRepository, "anotherUser", "password456", "Another User", "anotheruser@example.com", "AnotherTester");
         };
+    }
+
+    private void createUserIfNotExists(MemberRepository memberRepository, String loginId, String password, String username, String email, String nickname) {
+        if (memberRepository.findByLoginId(loginId).isEmpty()) {
+            Member newUser = Member.builder()
+                    .loginId(loginId)
+                    .password(password) // 기본 비밀번호 설정 (암호화 고려 필요)
+                    .username(username)
+                    .email(email)
+                    .nickname(nickname)
+                    .build();
+            memberRepository.save(newUser);
+            System.out.println("User created: " + loginId);
+        } else {
+            System.out.println("User already exists: " + loginId);
+        }
     }
 }

@@ -1,13 +1,14 @@
 package com.PickOne.domain.preference.controller;
 
-import com.PickOne.domain.preference.dto.PreferenceRegisterDto;
-import com.PickOne.domain.preference.dto.UserGenreRequestDto;
-import com.PickOne.domain.preference.dto.UserInstrumentRequestDto;
-import com.PickOne.domain.preference.dto.response.PreferenceResponseDto;
+import com.PickOne.domain.preference.dto.request.PreferenceRegisterDto;
+import com.PickOne.domain.preference.dto.request.UserGenreRequestDto;
+import com.PickOne.domain.preference.dto.request.UserInstrumentRequestDto;
+import com.PickOne.domain.preference.dto.response.PreferenceDetailDto;
 import com.PickOne.domain.preference.service.PreferenceService;
 import com.PickOne.global.exception.BaseResponse;
 import com.PickOne.global.exception.SuccessCode;
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,11 +25,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class PreferenceController {
     private final PreferenceService preferenceService;
 
+    @GetMapping("/detail")
+    public ResponseEntity<BaseResponse<PreferenceDetailDto>> getPreferenceInfo(
+            @RequestParam Long preferenceId) {
+        return BaseResponse.success(preferenceService.getPreferenceDetail(preferenceId));
+    }
+
     @GetMapping
-    public ResponseEntity<BaseResponse<PreferenceResponseDto>> loadPreferenceInfo( //1명의 취향조회
-            @RequestParam Long memberId) { //시큐리티 적용 후 @AuthenticationPrincipal 바꿀 예정
-        PreferenceResponseDto preferenceResponseDto = preferenceService.loadPreference(memberId);
-        return BaseResponse.success(preferenceResponseDto);
+    public ResponseEntity<BaseResponse<List<PreferenceDetailDto>>> getAllPreference() {
+        return BaseResponse.success(preferenceService.getAllPreferenceDetail());
     }
 
 

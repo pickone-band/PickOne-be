@@ -5,8 +5,9 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface PreferenceRepository extends JpaRepository<Preference, Long> {
+public interface PreferenceRepository extends JpaRepository<Preference, Long>, PreferenceRepositoryCustom {
     Optional<Preference> findByMemberLoginId(String loginId);
+
     Optional<Preference> findByMemberMemberId(Long memberId);
 
     List<Preference> findAll();
