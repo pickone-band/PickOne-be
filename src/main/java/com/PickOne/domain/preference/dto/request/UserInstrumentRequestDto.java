@@ -4,7 +4,7 @@ import com.PickOne.domain.preference.model.UserInstrument;
 import com.PickOne.domain.preference.model.entity.Instrument;
 import com.PickOne.domain.preference.model.entity.Preference;
 import com.PickOne.domain.preference.model.entity.Proficiency;
-import com.PickOne.domain.user.model.entity.Member;
+import com.PickOne.domain.user.model.Member;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;

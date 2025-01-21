@@ -1,6 +1,6 @@
 package com.PickOne.domain.preference.model.entity;
 
-import com.PickOne.domain.user.model.entity.Member;
+import com.PickOne.domain.user.model.Member;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;

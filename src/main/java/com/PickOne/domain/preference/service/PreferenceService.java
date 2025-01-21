@@ -11,7 +11,7 @@ import com.PickOne.domain.preference.model.entity.Preference;
 import com.PickOne.domain.preference.repository.PreferenceRepository;
 import com.PickOne.domain.preference.repository.UserGenreRepository;
 import com.PickOne.domain.preference.repository.UserInstrumentRepository;
-import com.PickOne.domain.user.model.entity.Member;
+import com.PickOne.domain.user.model.Member;
 import com.PickOne.domain.user.repository.MemberRepository;
 import com.PickOne.global.exception.BusinessException;
 import com.PickOne.global.exception.ErrorCode;
@@ -25,7 +25,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-
 public class PreferenceService {
     private final PreferenceRepository preferenceRepository;
     private final MemberRepository memberRepository;
@@ -35,10 +34,10 @@ public class PreferenceService {
 
     @Transactional
     public PreferenceResponseDto loadPreference(Long memberId) {
-        Member member = memberRepository.findByMemberId(memberId)     //시큐리티 적용후 memberId로 변경예정
+        Member member = memberRepository.findById(memberId)     //시큐리티 적용후 memberId로 변경예정
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_INFO_NOT_FOUND));
 
-        Preference preference = preferenceRepository.findByMemberMemberId(memberId)
+        Preference preference = preferenceRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
 
         return PreferenceResponseDto.fromEntity(preference);
@@ -62,10 +61,10 @@ public class PreferenceService {
             PreferenceRegisterDto preferenceRegisterDto
             , Long memberId) {
 
-        Member member = memberRepository.findByMemberId(memberId)
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new EntityNotFoundException("Member not found with ID: " + memberId));
 
-        preferenceRepository.findByMemberMemberId(memberId)
+        preferenceRepository.findByMemberId(memberId)
                 .ifPresent(preference -> {
                     throw new IllegalStateException("이미 존재합니다.");
                 });
@@ -79,10 +78,10 @@ public class PreferenceService {
             UserInstrumentRequestDto userInstrumentRequestDto
             , Long memberId) {
 
-        Member member = memberRepository.findByMemberId(memberId)
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_INFO_NOT_FOUND));
 
-        Preference preference = preferenceRepository.findByMemberMemberId(memberId)
+        Preference preference = preferenceRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
 
         List<UserInstrument> userInstruments = userInstrumentRequestDto.toEntityList(member, preference);
@@ -94,10 +93,10 @@ public class PreferenceService {
             UserGenreRequestDto userGenreRequestDto
             , Long memberId) {
 
-        Member member = memberRepository.findByMemberId(memberId)
+        Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_INFO_NOT_FOUND));
 
-        Preference preference = preferenceRepository.findByMemberMemberId(memberId)
+        Preference preference = preferenceRepository.findByMemberId(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
 
         List<UserGenre> userGenres = userGenreRequestDto.toEntityList(member, preference);

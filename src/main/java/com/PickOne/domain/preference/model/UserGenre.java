@@ -2,7 +2,7 @@ package com.PickOne.domain.preference.model;
 
 import com.PickOne.domain.preference.model.entity.Genre;
 import com.PickOne.domain.preference.model.entity.Preference;
-import com.PickOne.domain.user.model.entity.Member;
+import com.PickOne.domain.user.model.Member;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

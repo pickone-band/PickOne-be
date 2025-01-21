@@ -7,8 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PreferenceRepository extends JpaRepository<Preference, Long>, PreferenceRepositoryCustom {
     Optional<Preference> findByMemberLoginId(String loginId);
-
-    Optional<Preference> findByMemberMemberId(Long memberId);
+    Optional<Preference> findByMemberId(Long memberId);
 
     List<Preference> findAll();
 }

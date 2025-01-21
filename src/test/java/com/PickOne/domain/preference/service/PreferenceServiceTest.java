@@ -15,7 +15,7 @@ import com.PickOne.domain.preference.model.entity.Proficiency;
 import com.PickOne.domain.preference.repository.PreferenceRepository;
 import com.PickOne.domain.preference.repository.UserGenreRepository;
 import com.PickOne.domain.preference.repository.UserInstrumentRepository;
-import com.PickOne.domain.user.model.entity.Member;
+import com.PickOne.domain.user.model.Member;
 import com.PickOne.domain.user.repository.MemberRepository;
 import com.PickOne.global.exception.BusinessException;
 import com.PickOne.global.exception.ErrorCode;
@@ -80,11 +80,11 @@ class PreferenceServiceTest {
                         .build()
         );
 
-        preferenceService.registerPreference(preferenceRegisterDto, member.getMemberId());
-        preferenceService.registerUserInstrument(userInstrumentRequestDto, member.getMemberId());
-        preferenceService.registerUserGenre(userGenreRequestDto, member.getMemberId());
+        preferenceService.registerPreference(preferenceRegisterDto, member.getId());
+        preferenceService.registerUserInstrument(userInstrumentRequestDto, member.getId());
+        preferenceService.registerUserGenre(userGenreRequestDto, member.getId());
 
-        Preference savedPreference = preferenceRepository.findByMemberMemberId(member.getMemberId())
+        Preference savedPreference = preferenceRepository.findByMemberId(member.getId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PREFERENCE_NOT_FOUND));
 
         assertThat(savedPreference.getMbti()).isEqualTo(preferenceRegisterDto.getMbti());
