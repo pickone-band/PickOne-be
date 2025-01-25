@@ -24,5 +24,15 @@ public class TermController {
         return BaseResponse.success(SuccessCode.CREATED);
     }
 
+    @GetMapping
+    public ResponseEntity<BaseResponse<List<TermResponseDto>>> getAll() {
+        List<TermResponseDto> list = termService.getAllTerms();
+        return BaseResponse.success(list);
+    }
 
+    @GetMapping("/{id}")
+    public ResponseEntity<BaseResponse<TermResponseDto>> getOne(@PathVariable Long id) {
+        TermResponseDto dto = termService.getTerm(id);
+        return BaseResponse.success(dto);
+    }
 }

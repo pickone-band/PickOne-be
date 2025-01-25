@@ -42,4 +42,18 @@ public class TermService {
         termRepository.save(term);
     }
 
+    @Transactional(readOnly = true)
+    public TermResponseDto getTerm(Long id) {
+        Term term = termRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(ErrorCode.TERM_NOT_FOUND));
+        return modelMapper.map(term, TermResponseDto.class);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TermResponseDto> getAllTerms() {
+        return termRepository.findAll().stream()
+                .map(t -> modelMapper.map(t, TermResponseDto.class))
+                .collect(Collectors.toList());
+    }
+
 }

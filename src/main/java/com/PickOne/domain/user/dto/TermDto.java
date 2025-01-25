@@ -40,6 +40,20 @@ public class TermDto {
 
     }
 
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    public static class TermResponseDto {
+        private Long id;
+        private String title;
+        private String content;
+        private String version;
+        private Boolean isRequired;
+        private Boolean isActive;
+        private LocalDate startDate;
+        private LocalDate endDate;
+    }
+
 
 }
 

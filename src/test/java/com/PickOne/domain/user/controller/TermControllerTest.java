@@ -71,4 +71,63 @@ class TermControllerTest {
                 .andExpect(jsonPath("$.result").doesNotExist());
     }
 
+    @Test
+    @DisplayName("모든 약관 조회 - 성공")
+    void 모든_약관_조회_성공() throws Exception {
+        // Given
+        TermResponseDto dto1 = new TermResponseDto();
+        dto1.setTitle("약관 제목 1");
+        dto1.setVersion("1.0");
+
+        TermResponseDto dto2 = new TermResponseDto();
+        dto2.setTitle("약관 제목 2");
+        dto2.setVersion("1.1");
+
+        given(termService.getAllTerms()).willReturn(List.of(dto1, dto2));
+
+        // When & Then
+        mockMvc.perform(get("/api/terms")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isSuccess").value(true))
+                .andExpect(jsonPath("$.message").value(SuccessCode.OK.getMessage()))
+                .andExpect(jsonPath("$.result[0].title").value("약관 제목 1"))
+                .andExpect(jsonPath("$.result[1].title").value("약관 제목 2"));
+    }
+
+    @Test
+    @DisplayName("특정 약관 조회 - 성공")
+    void 특정_약관_조회_성공() throws Exception {
+        // Given
+        TermResponseDto dto = new TermResponseDto();
+        dto.setTitle("약관 제목");
+        dto.setVersion("1.0");
+
+        given(termService.getTerm(1L)).willReturn(dto);
+
+        // When & Then
+        mockMvc.perform(get("/api/terms/1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.isSuccess").value(true))
+                .andExpect(jsonPath("$.message").value(SuccessCode.OK.getMessage()))
+                .andExpect(jsonPath("$.result.title").value("약관 제목"))
+                .andExpect(jsonPath("$.result.version").value("1.0"));
+    }
+
+    @Test
+    @DisplayName("특정 약관 조회 - 약관 없음")
+    void 특정_약관_조회_실패() throws Exception {
+        // Given
+        willThrow(new BusinessException(ErrorCode.TERM_NOT_FOUND)).given(termService).getTerm(1L);
+
+        // When & Then
+        mockMvc.perform(get("/api/terms/1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.isSuccess").value(false))
+                .andExpect(jsonPath("$.message").value(ErrorCode.TERM_NOT_FOUND.getMessage()))
+                .andExpect(jsonPath("$.result").doesNotExist());
+    }
+
 }
