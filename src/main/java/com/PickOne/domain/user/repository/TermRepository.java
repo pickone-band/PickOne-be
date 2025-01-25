@@ -6,12 +6,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
 public interface TermRepository extends JpaRepository<Term, Long> {
-
-    // 필수 + 활성인 약관 목록
-    List<Term> findByIsRequiredTrueAndIsActiveTrue();
-
     // 약관 버전 중복 확인
-    boolean existsByVersion(String version); //
+    boolean existsByTitleAndVersion(String title, String version); //
 }

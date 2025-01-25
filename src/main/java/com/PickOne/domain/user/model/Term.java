@@ -2,7 +2,9 @@ package com.PickOne.domain.user.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Entity
@@ -34,6 +36,14 @@ public class Term extends BaseTimeEntity {
     @Column(name = "is_active", nullable = false, columnDefinition = "BOOLEAN DEFAULT false")
     private Boolean isActive;
 
+    @Column(name = "start_date", nullable = false)
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
     @OneToMany(mappedBy = "term", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<MemberTerm> memberTerms;
+
+    //약관 이력 TermHistory
 }
