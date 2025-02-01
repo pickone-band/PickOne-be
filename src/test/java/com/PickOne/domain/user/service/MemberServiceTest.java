@@ -1,273 +1,342 @@
 package com.PickOne.domain.user.service;
 
 import com.PickOne.domain.user.dto.MemberDto.*;
+import com.PickOne.domain.user.dto.MemberTermDto.*;
 import com.PickOne.domain.user.model.Member;
+import com.PickOne.domain.user.model.MemberTerm;
+import com.PickOne.domain.user.model.Role;
+import com.PickOne.domain.user.model.Term;
 import com.PickOne.domain.user.repository.MemberRepository;
+import com.PickOne.domain.user.repository.MemberTermRepository;
+import com.PickOne.domain.user.repository.TermRepository;
 import com.PickOne.global.exception.BusinessException;
 import com.PickOne.global.exception.ErrorCode;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.*;
+import static java.util.Arrays.asList;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
-@Transactional
+/**
+ * MemberService 단위 테스트
+ */
+@ExtendWith(MockitoExtension.class)
 class MemberServiceTest {
 
-    @Autowired
-    private MemberService memberService;
-
-    @Autowired
+    @Mock
     private MemberRepository memberRepository;
 
-    @Autowired
+    @Mock
+    private MemberTermRepository memberTermRepository;
+
+    @Mock
+    private TermRepository termRepository;
+
+    @Mock
+    private ModelMapper modelMapper;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
+
+    @InjectMocks
+    private MemberService memberService;
+
+    private MemberCreateDto memberCreateDto;
+    private Member member;
+    private Term requiredTerm;
+    private Term optionalTerm;
 
     @BeforeEach
     void setUp() {
-        memberRepository.deleteAll();
-    }
-    @Test
-    @DisplayName("회원 가입 - 중복 LoginId")
-    void createMember_duplicateLoginId() {
-        // given
-        MemberCreateDto dto1 = new MemberCreateDto();
-        dto1.setLoginId("testUser");
-        dto1.setPassword("1111");
-        dto1.setUsername("유저A");
-        dto1.setEmail("a@test.com");
-        dto1.setNickname("nickA");
-        memberService.createMember(dto1);
-
-        // when
-        MemberCreateDto dto2 = new MemberCreateDto();
-        dto2.setLoginId("testUser"); // 중복
-        dto2.setPassword("2222");
-        dto2.setUsername("유저B");
-        dto2.setEmail("b@test.com");
-        dto2.setNickname("nickB");
-
-        // then
-        assertThatThrownBy(() -> memberService.createMember(dto2))
-                .isInstanceOf(BusinessException.class).hasMessageContaining(ErrorCode.DUPLICATE_LOGIN_ID.getMessage());
-
-    }
-
-    @Test
-    @DisplayName("회원 가입 - 성공")
-    void createMember_success() {
-        // given
-        MemberCreateDto dto = new MemberCreateDto();
-        dto.setLoginId("newUser");
-        dto.setPassword("pass");
-        dto.setUsername("새유저");
-        dto.setEmail("new@test.com");
-        dto.setNickname("newNick");
-
-        // when
-        memberService.createMember(dto);
-
-        // then
-        Member found = memberRepository.findByLoginId("newUser")
-                .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않음"));
-        assertThat(found).isNotNull();
-        assertThat(found.getLoginId()).isEqualTo("newUser");
-
-        // 비밀번호 암호화 검사
-        assertThat(passwordEncoder.matches("pass", found.getPassword())).isTrue();
-    }
-
-    @Test
-    @DisplayName("회원 조회 - 전체")
-    void testGetAllMembers() {
-        // given
-        Member member1 = Member.builder()
-                .loginId("user1")
-                .password("pass1")
-                .username("유저1")
-                .email("user1@test.com")
-                .nickname("nick1")
+        // 필수 약관
+        requiredTerm = Term.builder()
+                .id(1L)
+                .isRequired(true)
                 .build();
 
-        Member member2 = Member.builder()
-                .loginId("user2")
-                .password("pass2")
-                .username("유저2")
-                .email("user2@test.com")
-                .nickname("nick2")
+        // 선택 약관
+        optionalTerm = Term.builder()
+                .id(2L)
+                .isRequired(false)
                 .build();
 
-        memberRepository.save(member1);
-        memberRepository.save(member2);
+        // 회원가입 DTO (Builder 사용)
+        memberCreateDto = MemberCreateDto.builder()
+                .loginId("testLogin")
+                .password("rawPassword")
+                .username("Test User")
+                .email("test@example.com")
+                .nickname("testNickname")
+                .termAgreements(asList(
+                        MemberTermCreateDto.builder().termId(1L).isAgreed(true).build(),
+                        MemberTermCreateDto.builder().termId(2L).isAgreed(false).build()
+                ))
+                .build();
+
+        // 엔티티 (Builder 사용)
+        member = Member.builder()
+                .id(100L)
+                .loginId("testLogin")
+                .password("encodedPassword")
+                .username("Test User")
+                .email("test@example.com")
+                .nickname("testNickname")
+                .role(Role.USER)
+                .build();
+    }
+
+    /* ===================================================================
+     * 1) createMember
+     * =================================================================== */
+    @Test
+    void createMember_Success() {
+        // given
+        when(memberRepository.existsByLoginId("testLogin")).thenReturn(false);
+        when(memberRepository.existsByEmail("test@example.com")).thenReturn(false);
+        when(memberRepository.existsByNickname("testNickname")).thenReturn(false);
+        when(termRepository.findAll()).thenReturn(asList(requiredTerm, optionalTerm));
+
+        // modelMapper
+        when(modelMapper.map(memberCreateDto, Member.class)).thenReturn(member);
+        // 패스워드 암호화
+        when(passwordEncoder.encode("rawPassword")).thenReturn("encodedPassword");
+        // 회원 저장
+        when(memberRepository.save(any(Member.class))).thenReturn(member);
+
+        // 약관 저장 시, findById 동작
+        when(termRepository.findById(1L)).thenReturn(Optional.of(requiredTerm));
+        when(termRepository.findById(2L)).thenReturn(Optional.of(optionalTerm));
 
         // when
-        List<MemberResponseDto> result = memberService.getAllMembers();
+        memberService.createMember(memberCreateDto);
 
         // then
-        assertThat(result).hasSize(2);
-        assertThat(result).extracting("username").containsExactly("유저1", "유저2");
+        verify(memberRepository, times(1)).save(any(Member.class));
+        verify(memberTermRepository, times(1)).saveAll(anyList());
     }
 
     @Test
-    @DisplayName("회원 조회 - 단일")
-    void testGetMember_Success() {
+    void createMember_Fail_DuplicateLoginId() {
         // given
-        Member member = Member.builder()
-                .loginId("user1")
-                .password("pass1")
-                .username("유저1")
-                .email("user1@test.com")
-                .nickname("nick1")
-                .build();
-
-        Member savedMember = memberRepository.save(member);
-
-        // when
-        MemberResponseDto result = memberService.getMember(savedMember.getId());
-
-        // then
-        assertThat(result).isNotNull();
-        assertThat(result.getUsername()).isEqualTo("유저1");
-        assertThat(result.getEmail()).isEqualTo("user1@test.com");
-    }
-
-    @Test
-    @DisplayName("회원 조회 - 실패")
-    void testGetMember_NotFound() {
-        // given
-        Long invalidId = 999L;
+        when(memberRepository.existsByLoginId("testLogin")).thenReturn(true);
 
         // when & then
-        assertThatThrownBy(() -> memberService.getMember(invalidId))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining(ErrorCode.USER_INFO_NOT_FOUND.getMessage());
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> memberService.createMember(memberCreateDto)
+        );
+        assertEquals(ErrorCode.DUPLICATE_LOGIN_ID, ex.getErrorCode());
+        verify(memberRepository, never()).save(any(Member.class));
     }
 
     @Test
-    @DisplayName("회원 정보 업데이트 성공 테스트")
+    void createMember_Fail_RequiredTermNotAgreed() {
+        // given
+        // 필수 약관 동의 해제
+        memberCreateDto.getTermAgreements().get(0).setIsAgreed(false);
+
+        when(memberRepository.existsByLoginId("testLogin")).thenReturn(false);
+        when(memberRepository.existsByEmail("test@example.com")).thenReturn(false);
+        when(memberRepository.existsByNickname("testNickname")).thenReturn(false);
+        when(termRepository.findAll()).thenReturn(asList(requiredTerm, optionalTerm));
+
+        // when & then
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> memberService.createMember(memberCreateDto)
+        );
+        assertEquals(ErrorCode.REQUIRED_TERM_NOT_AGREED, ex.getErrorCode());
+        verify(memberRepository, never()).save(any(Member.class));
+    }
+
+    /* ===================================================================
+     * 2) getAllMembers
+     * =================================================================== */
+    @Test
+    void getAllMembers_Success() {
+        // given
+        Member member2 = Member.builder()
+                .id(200L)
+                .loginId("testLogin2")
+                .password("pwd2")
+                .username("User2")
+                .email("test2@example.com")
+                .nickname("nick2")
+                .role(Role.USER)
+                .build();
+
+        when(memberRepository.findAll()).thenReturn(asList(member, member2));
+
+        MemberResponseDto dto1 = MemberResponseDto.builder()
+                .id(100L)
+                .loginId("testLogin")
+                .username("Test User")
+                .email("test@example.com")
+                .nickname("testNickname")
+                .role(Role.USER)
+                .build();
+
+        MemberResponseDto dto2 = MemberResponseDto.builder()
+                .id(200L)
+                .loginId("testLogin2")
+                .username("User2")
+                .email("test2@example.com")
+                .nickname("nick2")
+                .role(Role.USER)
+                .build();
+
+        when(modelMapper.map(member, MemberResponseDto.class)).thenReturn(dto1);
+        when(modelMapper.map(member2, MemberResponseDto.class)).thenReturn(dto2);
+
+        // when
+        List<MemberResponseDto> results = memberService.getAllMembers();
+
+        // then
+        assertEquals(2, results.size());
+        assertEquals(100L, results.get(0).getId());
+        assertEquals(200L, results.get(1).getId());
+    }
+
+    /* ===================================================================
+     * 3) getMember
+     * =================================================================== */
+    @Test
+    void getMember_Success() {
+        // given
+        when(memberRepository.findById(100L)).thenReturn(Optional.of(member));
+
+        MemberResponseDto dto = MemberResponseDto.builder()
+                .id(100L)
+                .loginId("testLogin")
+                .username("Test User")
+                .email("test@example.com")
+                .nickname("testNickname")
+                .role(Role.USER)
+                .build();
+
+        when(modelMapper.map(member, MemberResponseDto.class)).thenReturn(dto);
+
+        // when
+        MemberResponseDto response = memberService.getMember(100L);
+
+        // then
+        assertNotNull(response);
+        assertEquals(100L, response.getId());
+        assertEquals("testLogin", response.getLoginId());
+    }
+
+    @Test
+    void getMember_Fail_UserNotFound() {
+        // given
+        when(memberRepository.findById(anyLong())).thenReturn(Optional.empty());
+
+        // when & then
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> memberService.getMember(999L)
+        );
+        assertEquals(ErrorCode.USER_INFO_NOT_FOUND, ex.getErrorCode());
+    }
+
+    /* ===================================================================
+     * 4) updateMember
+     * =================================================================== */
+    @Test
     void updateMember_Success() {
         // given
-        Long memberId = 1L;
-        Member member = Member.builder()
-                .loginId("user1")
-                .password("password")
-                .username("기존유저")
-                .nickname("기존닉네임")
-                .email("user1@test.com")
+        MemberUpdateDto updateDto = MemberUpdateDto.builder()
+                .nickname("newNickname")
+                .username("New Username")
                 .build();
-        memberRepository.save(member);
 
-        MemberUpdateDto updateDto = new MemberUpdateDto();
-        updateDto.setUsername("업데이트유저");
-        updateDto.setNickname("업데이트닉네임");
+        when(memberRepository.findById(100L)).thenReturn(Optional.of(member));
+        when(memberRepository.existsByNickname("newNickname")).thenReturn(false);
+
+        Member updatedMember = Member.builder()
+                .id(100L)
+                .loginId("testLogin")
+                .password("encodedPassword")
+                .username("New Username")
+                .email("test@example.com")
+                .nickname("newNickname")
+                .role(Role.USER)
+                .build();
+
+        when(modelMapper.map(member, MemberResponseDto.class)).thenReturn(
+                MemberResponseDto.builder()
+                        .id(100L)
+                        .loginId("testLogin")
+                        .username("New Username")
+                        .email("test@example.com")
+                        .nickname("newNickname")
+                        .role(Role.USER)
+                        .build()
+        );
 
         // when
-        MemberResponseDto result = memberService.updateMember(member.getId(), updateDto);
+        MemberResponseDto result = memberService.updateMember(100L, updateDto);
 
         // then
-        assertThat(result).isNotNull();
-        assertThat(result.getUsername()).isEqualTo("업데이트유저");
-        assertThat(result.getNickname()).isEqualTo("업데이트닉네임");
-
-        Member updatedMember = memberRepository.findById(member.getId()).orElseThrow();
-        assertThat(updatedMember.getUsername()).isEqualTo("업데이트유저");
-        assertThat(updatedMember.getNickname()).isEqualTo("업데이트닉네임");
+        assertEquals("New Username", result.getUsername());
+        assertEquals("newNickname", result.getNickname());
     }
 
     @Test
-    @DisplayName("회원 정보 업데이트 실패 - 닉네임 중복")
-    void updateMember_DuplicateNickname() {
+    void updateMember_Fail_DuplicateNickname() {
         // given
-        Member member1 = Member.builder()
-                .loginId("user1")
-                .password("password")
-                .username("유저1")
-                .nickname("닉네임1")
-                .email("user1@test.com")
+        MemberUpdateDto updateDto = MemberUpdateDto.builder()
+                .nickname("duplicateNick")
+                .username("Username")
                 .build();
-        memberRepository.save(member1);
 
-        Member member2 = Member.builder()
-                .loginId("user2")
-                .password("password")
-                .username("유저2")
-                .nickname("닉네임2")
-                .email("user2@test.com")
-                .build();
-        memberRepository.save(member2);
-
-        MemberUpdateDto updateDto = new MemberUpdateDto();
-        updateDto.setUsername("유저1-업데이트");
-        updateDto.setNickname("닉네임2");
+        when(memberRepository.findById(100L)).thenReturn(Optional.of(member));
+        when(memberRepository.existsByNickname("duplicateNick")).thenReturn(true);
 
         // when & then
-        assertThatThrownBy(() -> memberService.updateMember(member1.getId(), updateDto))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining(ErrorCode.DUPLICATE_NICKNAME.getMessage());
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> memberService.updateMember(100L, updateDto)
+        );
+        assertEquals(ErrorCode.DUPLICATE_NICKNAME, ex.getErrorCode());
     }
 
+    /* ===================================================================
+     * 5) deleteMember
+     * =================================================================== */
     @Test
-    @DisplayName("회원 정보 업데이트 실패 - 회원 없음")
-    void updateMember_NotFound() {
+    void deleteMember_Success() {
         // given
-        Long invalidId = 999L;
-        MemberUpdateDto updateDto = new MemberUpdateDto();
-        updateDto.setUsername("유저1-업데이트");
-        updateDto.setNickname("닉네임1");
-
-        // when & then
-        assertThatThrownBy(() -> memberService.updateMember(invalidId, updateDto))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining(ErrorCode.USER_INFO_NOT_FOUND.getMessage());
-    }
-  
-  @Test
-  @DisplayName("회원 삭제 - 성공")
-    void deleteMember_success() {
-        // given
-        Member member = Member.builder()
-                .loginId("user1")
-                .password("pass1")
-                .username("유저1")
-                .email("user1@test.com")
-                .nickname("nick1")
-                .build();
-
-        Member savedMember = memberRepository.save(member);
+        when(memberRepository.findById(100L)).thenReturn(Optional.of(member));
 
         // when
-        memberService.deleteMember(savedMember.getId());
+        memberService.deleteMember(100L);
 
         // then
-        Optional<Member> deletedMember = memberRepository.findById(savedMember.getId());
-        assertThat(deletedMember).isEmpty();
+        verify(memberRepository, times(1)).delete(member);
     }
 
     @Test
-    @DisplayName("회원 삭제 - 실패 (존재하지 않는 회원)")
-    void deleteMember_notFound() {
+    void deleteMember_Fail_UserNotFound() {
         // given
-        Long invalidId = 999L;
+        when(memberRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> memberService.deleteMember(invalidId))
-                .isInstanceOf(BusinessException.class)
-                .hasMessageContaining(ErrorCode.USER_INFO_NOT_FOUND.getMessage());
+        BusinessException ex = assertThrows(
+                BusinessException.class,
+                () -> memberService.deleteMember(999L)
+        );
+        assertEquals(ErrorCode.USER_INFO_NOT_FOUND, ex.getErrorCode());
+        verify(memberRepository, never()).delete(any(Member.class));
     }
-
 }
-

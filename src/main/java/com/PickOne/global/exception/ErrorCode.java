@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum ErrorCode {
+
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, 1001, "잘못된 값을 입력했습니다."),
     METHOD_NOT_ALLOWED(HttpStatus.METHOD_NOT_ALLOWED, 1002, "허용되지 않은 메서드입니다."),
     ENTITY_NOT_FOUND(HttpStatus.BAD_REQUEST, 1003, "엔티티를 찾을 수 없습니다."),
@@ -52,7 +53,10 @@ public enum ErrorCode {
 
     // MemberTerm 관련
     ALREADY_AGREED(HttpStatus.BAD_REQUEST, 2601, "이미 동의된 약관입니다."),
-    MEMBER_TERM_NOT_FOUND(HttpStatus.NOT_FOUND, 2602, "해당 회원약관 정보를 찾을 수 없습니다.");
+    MEMBER_TERM_NOT_FOUND(HttpStatus.NOT_FOUND, 2602, "해당 회원약관 정보를 찾을 수 없습니다."),
+    REQUIRED_TERM_NOT_AGREED(HttpStatus.BAD_REQUEST, 2603, "필수 약관에 동의해야 합니다.");
+
+
 
     private final HttpStatus status; // HTTP 상태 코드
     private final int code; // 고유 오류 코드

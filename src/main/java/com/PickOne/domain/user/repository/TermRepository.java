@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 public interface TermRepository extends JpaRepository<Term, Long> {
+    List<Term> findAll();
     // 약관 버전 중복 확인
     boolean existsByTitleAndVersion(String title, String version); //
 }
