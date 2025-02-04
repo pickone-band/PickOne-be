@@ -56,5 +56,8 @@ public class Member extends BaseTimeEntity{
         if (this.role == null) {
             this.role = Role.USER;
         }
+        if (this.profile == null) {
+            this.profile = Profile.builder().member(this).build();
+        }
     }
 }
