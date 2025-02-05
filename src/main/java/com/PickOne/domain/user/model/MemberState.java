@@ -25,7 +25,8 @@ public class MemberState {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private MemberStatus status;
+    @Builder.Default
+    private MemberStatus status = MemberStatus.ACTIVE;
 
     @Column(name = "banned_at")
     private LocalDateTime bannedAt;
