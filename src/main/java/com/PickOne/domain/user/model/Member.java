@@ -32,7 +32,7 @@ public class Member extends BaseTimeEntity{
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "nickname", nullable = false, unique = true)
+    @Column(name = "nickname", nullable = true, unique = true)
     private String nickname;
 
     @Enumerated(EnumType.STRING)
