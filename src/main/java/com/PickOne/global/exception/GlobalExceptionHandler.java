@@ -5,7 +5,10 @@ import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authorization.AuthorizationDeniedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -111,16 +114,49 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 시큐리티 인가 예외 (권한없음)
+     * ❌ 로그인 실패 (잘못된 ID/PW)
      */
-    @ExceptionHandler(AuthorizationDeniedException.class)
-    protected ResponseEntity<BaseResponse<Void>> authorizationDeniedException(
-            final AuthorizationDeniedException e) {
-        log.error("AuthorizationDeniedException 예외 처리 : {}", e.getMessage(), e);
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<BaseResponse<Void>> handleBadCredentialsException(BadCredentialsException e) {
+        log.warn("🔐 [인증 실패] 잘못된 로그인 정보: {}", e.getMessage());
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(BaseResponse.fail(ErrorCode.AUTHORIZATION_DENIED));
     }
 
+    /**
+     * ❌ 존재하지 않는 사용자 (회원 정보 없음)
+     */
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<BaseResponse<Void>> handleUsernameNotFoundException(UsernameNotFoundException e) {
+        log.warn("🔐 [사용자 조회 실패] 존재하지 않는 사용자: {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(BaseResponse.fail(ErrorCode.USER_INFO_NOT_FOUND));
+    }
 
+    /**
+     * ❌ 권한 부족 (접근 거부)
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    protected ResponseEntity<BaseResponse<Void>> handleAccessDeniedException(AccessDeniedException e) {
+        log.warn("🔐 [접근 거부] 인가되지 않은 요청: {}", e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(BaseResponse.fail(ErrorCode.HANDLE_ACCESS_DENIED));
+    }
+
+    /**
+     * ❌ Spring Security 인가 예외 (권한 없음)
+     */
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    protected ResponseEntity<BaseResponse<Void>> handleAuthorizationDeniedException(
+            final AuthorizationDeniedException e) {
+        log.warn("🔐 [인가 실패] 권한 없음: {}", e.getMessage(), e);
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(BaseResponse.fail(ErrorCode.AUTHORIZATION_DENIED));
+    }
 }
+
+
