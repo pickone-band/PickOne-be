@@ -2,9 +2,9 @@ package com.PickOne.domain.preference.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.PickOne.domain.preference.dto.PreferenceRegisterDto;
-import com.PickOne.domain.preference.dto.UserGenreRequestDto;
-import com.PickOne.domain.preference.dto.UserInstrumentRequestDto;
+import com.PickOne.domain.preference.dto.request.PreferenceRegisterDto;
+import com.PickOne.domain.preference.dto.request.UserGenreRequestDto;
+import com.PickOne.domain.preference.dto.request.UserInstrumentRequestDto;
 import com.PickOne.domain.preference.model.UserGenre;
 import com.PickOne.domain.preference.model.UserInstrument;
 import com.PickOne.domain.preference.model.entity.Genre;
