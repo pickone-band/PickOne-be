@@ -4,60 +4,103 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Builder
-@Getter
-@Setter
 @Table(name = "members")
-public class Member extends BaseTimeEntity{
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Member extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "member_id", nullable = false, updatable = false)
     private Long id;
 
-    @Column(name = "login_id", nullable = false, unique = true)
-    private String loginId;
-
-    @Column(name = "password", nullable = false)
-    private String password;
-
-    @Column(name = "username", nullable = false)
+    @Column(name = "username", nullable = false, unique = true)
     private String username;
 
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "nickname", nullable = false, unique = true)
-    private String nickname;
+    @Column(name = "password", nullable = false)
+    private String password;
+
+    @Embedded
+    private Profile profile;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false)
-    private Role role = Role.USER;
+    private Role role;
 
-    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private MemberState memberState;
+    @Embedded
+    private MemberStatusDetail statusDetail;
 
-    @OneToOne(mappedBy = "member", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    private Profile profile;
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "member_agreements", joinColumns = @JoinColumn(name = "member_id"))
+    private List<MemberAgreement> agreements = new ArrayList<>();
 
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SocialAccount> socialAccounts;
+    @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "oauth_accounts", joinColumns = @JoinColumn(name = "member_id"))
+    private List<OAuthAccount> oauthAccounts = new ArrayList<>();
 
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MemberTerm> memberTerms;
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
-    @PrePersist
-    protected void prePersist() {
-        if (this.role == null) {
-            this.role = Role.USER;
-        }
-        if (this.profile == null) {
-            this.profile = Profile.builder().member(this).build();
-        }
+    public Member(String username, String email, String password, Profile profile, Role role, MemberStatusDetail statusDetail) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.profile = profile != null ? profile : new Profile("", null);
+        this.role = role != null ? role : Role.USER; // 기본 역할을 USER로 설정
+        this.statusDetail = statusDetail != null ? statusDetail : new MemberStatusDetail(MemberStatus.ACTIVE);
+    }
+
+    public Member update(String username, String nickname, Profile profile, Role role, MemberStatusDetail statusDetail) {
+        return new Member(
+                username != null ? username : this.username,
+                this.email,
+                this.password,
+                profile != null ? profile.update(profile.getName(), profile.getImageUrl()) : this.profile,
+                role != null ? role : this.role,
+                statusDetail != null ? statusDetail : this.statusDetail
+        );
+    }
+
+    /** 약관 동의 */
+    public void agreeToPolicy(AgreementPolicy policy) {
+        this.agreements.add(new MemberAgreement(policy.getId(), policy.getVersion(), LocalDateTime.now()));
+    }
+
+    /** OAuth 계정 추가 */
+    public void addOAuthAccount(OAuthAccount account) {
+        this.oauthAccounts.add(account);
+    }
+
+    /** 프로필 업데이트 */
+    public void updateProfile(String name, String imageUrl) {
+        this.profile = new Profile(name, imageUrl);
+    }
+
+    /** 회원 정지 */
+    public void ban(String reason) {
+        this.statusDetail = this.statusDetail.ban(reason);
+    }
+
+    /** 소프트 삭제 */
+    public void softDelete(String reason) {
+        this.deletedAt = LocalDateTime.now();
+        this.statusDetail = this.statusDetail.delete(reason);
+    }
+
+    /** 회원 복원 */
+    public void restore() {
+        this.deletedAt = null;
+        this.statusDetail = this.statusDetail.reactivate();
+    }
+
+    /** 회원이 삭제되었는지 확인 */
+    public boolean isDeleted() {
+        return this.deletedAt != null;
     }
 }

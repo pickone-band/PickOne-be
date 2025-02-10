@@ -5,30 +5,28 @@ import lombok.*;
 
 import java.time.LocalDate;
 
-@Entity
-@AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Builder
+@Embeddable
 @Getter
-@Setter
-@Table(name = "profiles")
-public class Profile extends BaseTimeEntity{
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Profile {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "profile_id", nullable = false, updatable = false)
-    private Long id;
+    @Column(name = "name", nullable = false)
+    private String name;
 
-    @OneToOne
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    @Column(name = "image_url")
+    private String imageUrl;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
+    public Profile(String name, String imageUrl) {
+        this.name = name;
+        this.imageUrl = imageUrl;
+    }
 
-    @Column(name = "birth_date")
-    private LocalDate birthDate;
+    public Profile update(String name, String imageUrl) {
+        return new Profile(
+                name != null ? name : this.name,
+                imageUrl != null ? imageUrl : this.imageUrl
+        );
+    }
 
-    @Column(name = "profile_pic_url")
-    private String profilePicUrl;
 }
+

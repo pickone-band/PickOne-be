@@ -3,8 +3,8 @@ package com.PickOne.domain.user.model;
 public enum SocialProvider {
 
     GOOGLE,
-    FACEBOOK,
+    KAKAO,
     NAVER,
-    KAKAO
+    FACEBOOK;
 
 }

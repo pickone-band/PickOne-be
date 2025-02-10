@@ -1,10 +1,15 @@
 package com.PickOne.domain.user.model;
 
-public enum Role {
+import org.springframework.security.core.GrantedAuthority;
 
-    USER, ADMIN; // 일반, 관리자
+public enum Role implements GrantedAuthority {
 
+    USER,
+    ADMIN; // 일반, 관리자
+
+    @Override
     public String getAuthority() {
         return "ROLE_" + this.name();
     }
+
 }
