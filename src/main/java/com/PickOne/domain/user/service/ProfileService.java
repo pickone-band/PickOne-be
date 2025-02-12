@@ -1,7 +1,9 @@
 package com.PickOne.domain.user.service;
 
 import com.PickOne.domain.user.dto.ProfileDto.*;
+import com.PickOne.domain.user.model.Member;
 import com.PickOne.domain.user.model.Profile;
+import com.PickOne.domain.user.repository.MemberRepository;
 import com.PickOne.domain.user.repository.ProfileRepository;
 import com.PickOne.global.exception.BusinessException;
 import com.PickOne.global.exception.ErrorCode;
@@ -9,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,3 +35,4 @@ public class ProfileService {
         return modelMapper.map(profile, ProfileResponseDto.class);
     }
 }
+

@@ -20,6 +20,7 @@ public class MemberController {
     @PostMapping
     public ResponseEntity<BaseResponse<Void>> signUp(@RequestBody MemberCreateDto dto) {
         memberService.createMember(dto);
+        System.out.println(dto.getNickname()+dto.getUsername());
         return BaseResponse.success(SuccessCode.CREATED);
     }
 

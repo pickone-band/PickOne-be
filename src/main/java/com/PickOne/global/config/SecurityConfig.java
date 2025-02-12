@@ -59,6 +59,7 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, blacklistTokenRepository), UsernamePasswordAuthenticationFilter.class);
 
+
         return http.build();
     }
 
