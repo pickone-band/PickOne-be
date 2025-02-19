@@ -2,6 +2,7 @@ package com.PickOne.domain.user.repository;
 
 import com.PickOne.domain.user.model.Member;
 import com.PickOne.domain.user.model.QMember;
+import com.PickOne.domain.user.model.QMemberStatusDetail;
 import com.querydsl.core.BooleanBuilder;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
@@ -100,13 +101,17 @@ public class MemberQueryDslRepositoryImpl implements MemberQueryDslRepository {
     @Override
     public List<Member> findDeletedBeforeThreshold() {
         log.info("[MemberQueryDslRepositoryImpl.findDeletedBeforeThreshold] 소프트 삭제 회원 조회 (1개월 이전) 시작.");
+
         QMember qMember = QMember.member;
+        QMemberStatusDetail qStatusDetail = qMember.statusDetail;
+
         LocalDateTime threshold = LocalDateTime.now().minusMonths(1);
         log.debug("[findDeletedBeforeThreshold] threshold={}", threshold);
 
         List<Member> deletedMembers = queryFactory
                 .selectFrom(qMember)
-                .where(qMember.deletedAt.isNotNull().and(qMember.deletedAt.before(threshold)))
+                .where(qStatusDetail.deletedAt.isNotNull()
+                        .and(qStatusDetail.deletedAt.before(threshold)))
                 .fetch();
 
         log.info("[findDeletedBeforeThreshold] 조회 완료. deletedMembers.size()={}", deletedMembers.size());

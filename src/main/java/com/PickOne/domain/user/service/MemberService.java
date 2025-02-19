@@ -161,6 +161,6 @@ public class MemberService {
                     return new BusinessException(ErrorCode.USER_INFO_NOT_FOUND);
                 });
         member.softDelete("사용자 요청에 의한 삭제");
-        log.warn("[deleteMember] 회원 소프트 삭제 완료 - ID={}, deletedAt={}", member.getId(), member.getDeletedAt());
+        log.warn("[deleteMember] 회원 소프트 삭제 완료 - ID={}, deletedAt={}", member.getId(), member.getStatusDetail().getDeletedAt());
     }
 }

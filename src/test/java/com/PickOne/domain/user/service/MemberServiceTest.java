@@ -267,6 +267,6 @@ class MemberServiceTest {
 
         // Then
         assertThat(member.isDeleted()).isTrue();
-        assertThat(member.getDeletedAt()).isNotNull();
+        assertThat(member.getStatusDetail().getDeletedAt()).isNotNull();
     }
 }

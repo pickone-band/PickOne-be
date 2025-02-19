@@ -26,33 +26,32 @@ public class MemberStatusDetail {
     private String reason;
 
     public MemberStatusDetail(MemberStatus status) {
-        log.debug("[MemberStatusDetail 생성자] status={}", status);
         this.status = status;
     }
 
     /** 회원 정지 */
-    public MemberStatusDetail ban(String reason) {
+    public void ban(String reason) {
         log.debug("[MemberStatusDetail.ban] 회원 정지 처리 (reason={})", reason);
-        return new MemberStatusDetail(MemberStatus.BANNED, LocalDateTime.now(), null, reason);
+        this.status = MemberStatus.BANNED;
+        this.bannedAt = LocalDateTime.now();
+        this.reason = reason;
     }
 
     /** 회원 삭제 */
-    public MemberStatusDetail delete(String reason) {
+    public void delete(String reason) {
         log.debug("[MemberStatusDetail.delete] 회원 삭제 처리 (reason={})", reason);
-        return new MemberStatusDetail(MemberStatus.DELETED, null, LocalDateTime.now(), reason);
+        this.status = MemberStatus.DELETED;
+        this.deletedAt = LocalDateTime.now();
+        this.reason = reason;
     }
 
     /** 회원 복구 */
-    public MemberStatusDetail reactivate() {
+    public void reactivate() {
         log.debug("[MemberStatusDetail.reactivate] 회원 복원 처리");
-        return new MemberStatusDetail(MemberStatus.ACTIVE, null, null, null);
-    }
-
-    private MemberStatusDetail(MemberStatus status, LocalDateTime bannedAt,
-                               LocalDateTime deletedAt, String reason) {
-        this.status = status;
-        this.bannedAt = bannedAt;
-        this.deletedAt = deletedAt;
-        this.reason = reason;
+        this.status = MemberStatus.ACTIVE;
+        this.bannedAt = null;
+        this.deletedAt = null;
+        this.reason = null;
     }
 }
+

@@ -225,7 +225,7 @@ class AgreementPolicyServiceTest {
     void searchPolicies_Success() {
         // Given
         List<AgreementPolicy> policies = Arrays.asList(mock(AgreementPolicy.class), mock(AgreementPolicy.class));
-        when(agreementPolicyQueryDslRepository.searchPolicies("이용", true, true))
+        when(agreementPolicyRepository.searchPolicies("이용", true, true))
                 .thenReturn(policies);
         when(agreementPolicyMapper.toDtoList(policies)).thenReturn(Arrays.asList(
                 new AgreementPolicyResponseDto(1L, "이용약관1", "내용1", 1L, true, true, LocalDate.now(), null),
@@ -237,7 +237,7 @@ class AgreementPolicyServiceTest {
 
         // Then
         assertThat(result).hasSize(2);
-        verify(agreementPolicyQueryDslRepository, times(1))
+        verify(agreementPolicyRepository, times(1))
                 .searchPolicies("이용", true, true);
     }
 
@@ -247,7 +247,7 @@ class AgreementPolicyServiceTest {
         AgreementPolicy policy = mock(AgreementPolicy.class);
         when(policy.getId()).thenReturn(1L);
 
-        when(agreementPolicyQueryDslRepository.findLatestActivePolicy("이용약관"))
+        when(agreementPolicyRepository.findLatestActivePolicy("이용약관"))
                 .thenReturn(policy);
 
         when(agreementPolicyMapper.toDto(policy)).thenReturn(
@@ -256,13 +256,13 @@ class AgreementPolicyServiceTest {
 
         AgreementPolicyResponseDto result = agreementPolicyService.getLatestActivePolicy("이용약관");
         assertThat(result.getTitle()).isEqualTo("이용약관");
-        verify(agreementPolicyQueryDslRepository, times(1))
+        verify(agreementPolicyRepository, times(1))
                 .findLatestActivePolicy("이용약관");
     }
 
     @Test
     void getLatestActivePolicy_Fail_NotFound() {
-        when(agreementPolicyQueryDslRepository.findLatestActivePolicy("이용약관"))
+        when(agreementPolicyRepository.findLatestActivePolicy("이용약관"))
                 .thenReturn(null);
 
         BusinessException exception = assertThrows(BusinessException.class, () -> {

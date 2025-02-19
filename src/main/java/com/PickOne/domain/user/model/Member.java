@@ -47,9 +47,6 @@ public class Member extends BaseTimeEntity {
     @CollectionTable(name = "oauth_accounts", joinColumns = @JoinColumn(name = "member_id"))
     private List<OAuthAccount> oauthAccounts = new ArrayList<>();
 
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
     // 정적 팩토리 메서드
     public static Member create(String username, String email, String encodedPassword,
                                 String nickname, List<AgreementPolicy> agreementPolicies) {
@@ -136,29 +133,27 @@ public class Member extends BaseTimeEntity {
     /** 회원 정지 */
     public void ban(String reason) {
         log.warn("[Member.ban] 회원 정지 시도 (memberID={}, reason={})", this.id, reason);
-        this.statusDetail = this.statusDetail.ban(reason);
+        this.statusDetail.ban(reason);
         log.warn("[Member.ban] 회원 정지 완료 (memberID={}, reason={})", this.id, reason);
     }
 
     /** 소프트 삭제 */
     public void softDelete(String reason) {
         log.warn("[Member.softDelete] 회원 소프트 삭제 시도 (memberID={}, reason={})", this.id, reason);
-        this.deletedAt = LocalDateTime.now();
-        this.statusDetail = this.statusDetail.delete(reason);
-        log.warn("[Member.softDelete] 회원 소프트 삭제 완료 (memberID={}, deletedAt={})", this.id, this.deletedAt);
+        this.statusDetail.delete(reason);
+        log.warn("[Member.softDelete] 회원 소프트 삭제 완료 (memberID={}, deletedAt={})", this.id, this.statusDetail.getDeletedAt());
     }
 
     /** 회원 복원 */
     public void restore() {
         log.info("[Member.restore] 회원 복원 시도 (memberID={})", this.id);
-        this.deletedAt = null;
-        this.statusDetail = this.statusDetail.reactivate();
+        this.statusDetail.reactivate();
         log.info("[Member.restore] 회원 복원 완료 (memberID={})", this.id);
     }
 
     /** 회원이 삭제되었는지 확인 */
     public boolean isDeleted() {
-        return this.deletedAt != null;
+        return this.statusDetail.getDeletedAt() != null;
     }
 
     @Override

@@ -23,7 +23,6 @@ import java.util.List;
 public class AgreementPolicyService {
 
     private final AgreementPolicyRepository agreementPolicyRepository;
-    private final AgreementPolicyQueryDslRepository agreementPolicyQueryDslRepository;
     private final AgreementPolicyMapper agreementPolicyMapper;
 
     /**
@@ -105,7 +104,7 @@ public class AgreementPolicyService {
     public List<AgreementPolicyResponseDto> searchPolicies(String title, Boolean isActive, Boolean isRequired) {
         log.info("[AgreementPolicyService.searchPolicies] 동적 검색 시작 - title={}, isActive={}, isRequired={}",
                 title, isActive, isRequired);
-        List<AgreementPolicy> results = agreementPolicyQueryDslRepository.searchPolicies(title, isActive, isRequired);
+        List<AgreementPolicy> results = agreementPolicyRepository.searchPolicies(title, isActive, isRequired);
         log.info("[searchPolicies] 동적 검색 결과 수: {}", results.size());
         return agreementPolicyMapper.toDtoList(results);
     }
@@ -115,7 +114,7 @@ public class AgreementPolicyService {
      */
     public AgreementPolicyResponseDto getLatestActivePolicy(String title) {
         log.info("[AgreementPolicyService.getLatestActivePolicy] 최신 활성화 약관 조회 - title={}", title);
-        AgreementPolicy latest = agreementPolicyQueryDslRepository.findLatestActivePolicy(title);
+        AgreementPolicy latest = agreementPolicyRepository.findLatestActivePolicy(title);
         if (latest == null) {
             log.warn("[getLatestActivePolicy] 활성화된 최신 약관 없음 - title={}", title);
             throw new BusinessException(ErrorCode.TERM_NOT_FOUND);
