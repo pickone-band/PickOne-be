@@ -8,17 +8,17 @@ public class ProfileMapper implements BaseMapper<Profile, ProfileResponseDto> {
     @Override
     public ProfileResponseDto toDto(Profile entity) {
         return new ProfileResponseDto(
-                entity.getName(),
+                entity.getNickname(),
                 entity.getImageUrl()
         );
     }
 
     @Override
     public Profile toEntity(ProfileResponseDto dto) {
-        return dto != null ? new Profile(dto.getName(), dto.getImageUrl()) : new Profile("", null);
+        return dto != null ? new Profile(dto.getNickname(), dto.getImageUrl()) : new Profile("", null);
     }
 
     public Profile toEntity(ProfileUpdateDto dto) {
-        return dto != null ? new Profile(dto.getName(), dto.getImageUrl()) : new Profile("", null);
+        return dto != null ? new Profile(dto.getNickname(), dto.getImageUrl()) : new Profile("", null);
     }
 }

@@ -2,19 +2,16 @@ package com.PickOne.domain.user.dto.member;
 
 import com.PickOne.domain.user.dto.aouthAccount.OAuthAccountMapper;
 import com.PickOne.domain.user.dto.aouthAccount.OAuthAccountResponseDto;
-import com.PickOne.domain.user.dto.profile.ProfileMapper;
-import com.PickOne.domain.user.model.Member;
-import com.PickOne.domain.user.model.MemberStatus;
-import com.PickOne.domain.user.model.Role;
-import com.PickOne.domain.user.model.MemberStatusDetail;
+import com.PickOne.domain.user.model.*;
 import com.PickOne.global.util.mapper.BaseMapper;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Component
 public class MemberMapper implements BaseMapper<Member, MemberResponseDto> {
 
-    private final ProfileMapper profileMapper = new ProfileMapper();
     private final OAuthAccountMapper oauthMapper = new OAuthAccountMapper();
 
     @Override
@@ -26,48 +23,46 @@ public class MemberMapper implements BaseMapper<Member, MemberResponseDto> {
                 .collect(Collectors.toList())
                 : List.of();
 
-        return new MemberResponseDto(
-                entity.getId(),
-                entity.getUsername(),
-                entity.getEmail(),
-                entity.getProfile().getName(),
-                entity.getRole(),
-                profileMapper.toDto(entity.getProfile()),
-                entity.getStatusDetail(),
-                oauthAccounts
-        );
+        return MemberResponseDto.builder()
+                .id(entity.getId())
+                .username(entity.getUsername())
+                .email(entity.getEmail())
+                .nickname(entity.getProfile().getNickname())
+                .role(entity.getRole())
+                .status(entity.getStatusDetail().getStatus().name())
+                .oauthAccounts(oauthAccounts)
+                .build();
     }
 
     @Override
     public Member toEntity(MemberResponseDto dto) {
+        Profile profile = new Profile(dto.getNickname(), null); // Profile 생성 시 imageUrl은 null
+
         return new Member(
                 dto.getUsername(),
                 dto.getEmail(),
-                null, // 비밀번호는 별도 설정 필요
-                profileMapper.toEntity(dto.getProfile()),
-                dto.getRole() != null ? dto.getRole() : Role.USER, // 기본 역할 설정
-                dto.getStatusDetail() != null ? dto.getStatusDetail() : new MemberStatusDetail(MemberStatus.ACTIVE)
+                null, // 비밀번호는 별도로 설정
+                profile,
+                dto.getRole() != null ? dto.getRole() : Role.USER,
+                new MemberStatusDetail(MemberStatus.valueOf(dto.getStatus()))
         );
     }
 
-    public Member toEntity(MemberCreateDto dto, String encodedPassword) {
-        return new Member(
+    public Member toEntity(MemberCreateDto dto, String encodedPassword, List<AgreementPolicy> agreementPolicies) {
+        return Member.create(
                 dto.getUsername(),
                 dto.getEmail(),
                 encodedPassword,
-                profileMapper.toEntity(dto.getProfile()),
-                Role.USER, // 기본 역할 USER
-                new MemberStatusDetail(MemberStatus.ACTIVE) // 기본 상태 설정
+                dto.getNickname(),
+                agreementPolicies
         );
     }
 
     public Member updateEntity(Member member, MemberUpdateDto dto) {
         return member.update(
-                dto.getUsername(),
-                dto.getNickname(),
-                dto.getProfile() != null ? profileMapper.toEntity(dto.getProfile()) : member.getProfile(),
-                dto.getRole() != null ? dto.getRole() : member.getRole(),
-                dto.getStatusDetail() != null ? dto.getStatusDetail() : member.getStatusDetail()
+                dto.getPassword(),    // ✅ 비밀번호
+                dto.getNickname(),    // ✅ 닉네임
+                dto.getImageUrl()
         );
     }
 }

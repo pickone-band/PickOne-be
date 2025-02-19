@@ -7,6 +7,6 @@ import lombok.Setter;
 @Getter
 @AllArgsConstructor
 public class ProfileResponseDto {
-    private String name;
+    private String nickname;
     private String imageUrl;
 }

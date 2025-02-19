@@ -4,20 +4,23 @@ import com.PickOne.domain.user.dto.aouthAccount.OAuthAccountResponseDto;
 import com.PickOne.domain.user.dto.profile.ProfileResponseDto;
 import com.PickOne.domain.user.model.MemberStatusDetail;
 import com.PickOne.domain.user.model.Role;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import lombok.*;
 
 import java.util.List;
 
+@Builder
 @Getter
+@Setter
+@NoArgsConstructor
 @AllArgsConstructor
 public class MemberResponseDto {
+
     private Long id;
     private String username;
     private String email;
     private String nickname;
-    private Role role;  // Role 추가
-    private ProfileResponseDto profile;
-    private MemberStatusDetail statusDetail;
-    private final List<OAuthAccountResponseDto> oauthAccounts;
-}
+    private Role role;
+    private String status;
+    private List<OAuthAccountResponseDto> oauthAccounts;
+
+    }

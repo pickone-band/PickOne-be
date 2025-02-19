@@ -30,7 +30,7 @@ public enum ErrorCode {
 
 
     // (새로 추가) 회원 중복
-    DUPLICATE_LOGIN_ID(HttpStatus.BAD_REQUEST, 2101, "이미 사용 중인 로그인 아이디입니다."),
+    DUPLICATE_USERNAME(HttpStatus.BAD_REQUEST, 2101, "이미 사용 중인 로그인 아이디입니다."),
     DUPLICATE_EMAIL(HttpStatus.BAD_REQUEST, 2102, "이미 사용 중인 이메일입니다."),
     DUPLICATE_NICKNAME(HttpStatus.BAD_REQUEST, 2103, "이미 사용 중인 닉네임입니다."),
 

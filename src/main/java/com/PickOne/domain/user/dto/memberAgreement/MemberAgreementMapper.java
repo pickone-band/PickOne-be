@@ -10,7 +10,6 @@ public class MemberAgreementMapper implements BaseMapper<MemberAgreement, Member
     public MemberAgreementResponseDto toDto(MemberAgreement entity) {
         return new MemberAgreementResponseDto(
                 entity.getPolicyId(),
-                entity.getPolicyVersion(),
                 entity.getAgreedAt()
         );
     }
@@ -19,7 +18,6 @@ public class MemberAgreementMapper implements BaseMapper<MemberAgreement, Member
     public MemberAgreement toEntity(MemberAgreementResponseDto dto) {
         return new MemberAgreement(
                 dto.getAgreementPolicyId(),
-                dto.getVersion(),
                 dto.getAgreedAt()
         );
     }
@@ -27,7 +25,6 @@ public class MemberAgreementMapper implements BaseMapper<MemberAgreement, Member
     public MemberAgreement toEntity(MemberAgreementCreateDto dto) {
         return new MemberAgreement(
                 dto.getAgreementPolicyId(),
-                dto.getPolicyVersion(),
                 dto.getAgreedAt()
         );
     }

@@ -9,6 +9,5 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class MemberAgreementResponseDto {
     private final Long agreementPolicyId;
-    private final Long version;
     private final LocalDateTime agreedAt;
 }

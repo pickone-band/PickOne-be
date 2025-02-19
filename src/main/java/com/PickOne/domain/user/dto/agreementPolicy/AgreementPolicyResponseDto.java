@@ -11,7 +11,7 @@ public class AgreementPolicyResponseDto {
     private final Long id;
     private final String title;
     private final String content;
-    private final Long policyVersion;
+    private final Long version;
     private final boolean isRequired;
     private final boolean isActive;
     private final LocalDate startDate;
