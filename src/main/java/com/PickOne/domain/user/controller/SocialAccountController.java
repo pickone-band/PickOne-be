@@ -1,3 +1,4 @@
+/*
 package com.PickOne.domain.user.controller;
 
 import com.PickOne.domain.user.dto.SocialAccountDto.*;
@@ -48,3 +49,4 @@ public class SocialAccountController {
         return BaseResponse.success(SuccessCode.DELETED);
     }
 }
+*/
