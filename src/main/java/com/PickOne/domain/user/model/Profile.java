@@ -2,31 +2,32 @@ package com.PickOne.domain.user.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDate;
+import lombok.extern.slf4j.Slf4j;
 
 @Embeddable
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Slf4j
 public class Profile {
 
-    @Column(name = "name", nullable = false)
-    private String name;
+    @Column(name = "nickname", nullable = false)
+    private String nickname;
 
     @Column(name = "image_url")
     private String imageUrl;
 
-    public Profile(String name, String imageUrl) {
-        this.name = name;
+    public Profile(String nickname, String imageUrl) {
+        log.debug("[Profile 생성자] nickname={}, imageUrl={}", nickname, imageUrl);
+        this.nickname = nickname;
         this.imageUrl = imageUrl;
     }
 
-    public Profile update(String name, String imageUrl) {
+    public Profile update(String nickname, String imageUrl) {
+        log.debug("[Profile.update] 프로필 업데이트 (기존 nickname={}, 기존 imageUrl={})",
+                this.nickname, this.imageUrl);
         return new Profile(
-                name != null ? name : this.name,
+                nickname != null ? nickname : this.nickname,
                 imageUrl != null ? imageUrl : this.imageUrl
         );
     }
-
 }
-
