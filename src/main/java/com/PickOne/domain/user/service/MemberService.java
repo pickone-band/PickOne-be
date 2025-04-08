@@ -1,158 +1,166 @@
 package com.PickOne.domain.user.service;
 
-
-import com.PickOne.domain.user.dto.MemberDto.*;
-import com.PickOne.domain.user.dto.MemberTermDto.*;
+import com.PickOne.domain.user.dto.member.*;
+import com.PickOne.domain.user.model.AgreementPolicy;
 import com.PickOne.domain.user.model.Member;
-import com.PickOne.domain.user.model.MemberTerm;
-import com.PickOne.domain.user.model.Role;
-import com.PickOne.domain.user.model.Term;
+import com.PickOne.domain.user.repository.AgreementPolicyRepository;
 import com.PickOne.domain.user.repository.MemberRepository;
-import com.PickOne.domain.user.repository.MemberTermRepository;
-import com.PickOne.domain.user.repository.TermRepository;
 import com.PickOne.global.exception.BusinessException;
 import com.PickOne.global.exception.ErrorCode;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
+@Slf4j
 public class MemberService {
 
-    private final MemberTermRepository memberTermRepository;
-    private final TermRepository termRepository;
     private final MemberRepository memberRepository;
-    private final ModelMapper modelMapper;
+    private final AgreementPolicyRepository agreementPolicyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final MemberMapper memberMapper;
 
     /**
-     * 회원가입
+     * ✅ 회원가입
      */
-    /**
-     * 회원가입
-     */
-    public void createMember(MemberCreateDto dto) {
+    public MemberResponseDto createMember(MemberCreateDto dto) {
+        log.info("[MemberService.createMember] 회원가입 시도: username={}, email={}",
+                dto.getUsername(), dto.getEmail());
+
         // 1) 중복 체크
         validateDuplicate(dto);
+        log.debug("[createMember] 중복 체크 통과: username={}", dto.getUsername());
 
-        // 2) 필수 약관 체크
-        validateRequiredTerms(dto.getTermAgreements());
+        // 2) 비밀번호 인코딩
+        String encodedPassword = passwordEncoder.encode(dto.getPassword());
+        log.debug("[createMember] 비밀번호 암호화 완료: encodedPassword={}", encodedPassword);
 
-        // 3) Member 엔티티 생성
-        Member member = modelMapper.map(dto, Member.class);
-        member.setRole(Role.USER);
-        member.setPassword(passwordEncoder.encode(dto.getPassword()));
-
-        // 4) Member 저장
-        Member savedMember = memberRepository.save(member);
-
-        // 5) 약관 동의 내역 저장 (MemberTerm)
-        saveMemberTerms(savedMember, dto.getTermAgreements());
-    }
-
-    /**
-     * 필수 약관에 모두 동의했는지 검증
-     */
-    private void validateRequiredTerms(List<MemberTermCreateDto> termAgreements) {
-        // (1) DB에서 '필수' 약관 목록 조회
-        List<Term> requiredTerms = termRepository.findAll().stream()
-                .filter(Term::getIsRequired)
-                .toList();
-
-        // (2) 요청에서 termId -> isAgreed 매핑
-        Map<Long, Boolean> agreementMap = termAgreements.stream()
-                .collect(Collectors.toMap(MemberTermCreateDto::getTermId, MemberTermCreateDto::getIsAgreed));
-
-        // (3) 모든 필수 약관에 대해 동의(true)인지 검사
-        for (Term requiredTerm : requiredTerms) {
-            Boolean agreed = agreementMap.get(requiredTerm.getId());
-            if (agreed == null || !agreed) {
-                throw new BusinessException(ErrorCode.REQUIRED_TERM_NOT_AGREED);
-            }
+        // 3) 약관 조회
+        List<AgreementPolicy> policies = agreementPolicyRepository.findAllById(dto.getAgreementPolicyIds());
+        log.debug("[createMember] 약관 조회 결과: 요청 개수={}, 실제 조회 개수={}",
+                dto.getAgreementPolicyIds().size(), policies.size());
+        if (policies.size() != dto.getAgreementPolicyIds().size()) {
+            log.error("[createMember] 약관 일부 누락됨. TERM_NOT_FOUND 발생");
+            throw new BusinessException(ErrorCode.TERM_NOT_FOUND);
         }
+
+        // 4) 회원 생성
+        Member member = memberMapper.toEntity(dto, encodedPassword, policies);
+        log.debug("[createMember] 매퍼로 엔티티 변환 완료: {}", member);
+
+        // 5) 저장
+        Member savedMember = memberRepository.save(member);
+        log.info("[createMember] 회원가입 성공 - ID={}, Username={}", savedMember.getId(), savedMember.getUsername());
+
+        // 6) DTO 변환 후 반환
+        MemberResponseDto responseDto = memberMapper.toDto(savedMember);
+        log.debug("[createMember] 엔티티→DTO 변환 완료: {}", responseDto);
+        return responseDto;
     }
 
     /**
-     * 회원-약관 동의 내역(MemberTerm) 저장
+     * 중복 검사
      */
-    private void saveMemberTerms(Member savedMember, List<MemberTermCreateDto> termAgreements) {
-        List<MemberTerm> memberTerms = termAgreements.stream()
-                .map(agreement -> {
-                    Term term = termRepository.findById(agreement.getTermId())
-                            .orElseThrow(() -> new BusinessException(ErrorCode.TERM_NOT_FOUND));
-
-                    return MemberTerm.builder()
-                            .member(savedMember)
-                            .term(term)
-                            .isAgreed(agreement.getIsAgreed())
-                            .build();
-                })
-                .collect(Collectors.toList());
-
-        // Bulk insert 처리
-        memberTermRepository.saveAll(memberTerms);
-    }
-
     private void validateDuplicate(MemberCreateDto dto) {
-        if (memberRepository.existsByLoginId(dto.getLoginId())) {
-            throw new BusinessException(ErrorCode.DUPLICATE_LOGIN_ID);
+        log.debug("[MemberService.validateDuplicate] 중복 체크: username={}, email={}, nickname={}",
+                dto.getUsername(), dto.getEmail(), dto.getNickname());
+        if (memberRepository.existsByUsername(dto.getUsername())) {
+            log.warn("[validateDuplicate] 중복된 사용자 이름: {}", dto.getUsername());
+            throw new BusinessException(ErrorCode.DUPLICATE_USERNAME);
         }
         if (memberRepository.existsByEmail(dto.getEmail())) {
+            log.warn("[validateDuplicate] 중복된 이메일: {}", dto.getEmail());
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
         if (memberRepository.existsByNickname(dto.getNickname())) {
+            log.warn("[validateDuplicate] 중복된 닉네임: {}", dto.getNickname());
             throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
         }
     }
 
+    /**
+     * ✅ 단일 회원 조회
+     */
+    @Transactional
+    public MemberResponseDto getMember(Long id) {
+        log.info("[MemberService.getMember] 단일 회원 조회 시도 - ID={}", id);
+        Member member = memberRepository.findById(id)
+                .orElseThrow(() -> {
+                    log.error("[getMember] 회원 조회 실패 - 존재하지 않는 ID={}", id);
+                    return new BusinessException(ErrorCode.USER_INFO_NOT_FOUND);
+                });
+        log.info("[getMember] 단일 회원 조회 성공 - ID={}, username={}", member.getId(), member.getUsername());
+        return memberMapper.toDto(member);
+    }
+
+    /**
+     * ✅ 전체 회원 조회
+     */
     @Transactional
     public List<MemberResponseDto> getAllMembers() {
-        return memberRepository.findAll().stream()
-                .map(m -> modelMapper.map(m, MemberResponseDto.class))
+        log.info("[MemberService.getAllMembers] 전체 회원 조회 시작");
+        List<Member> members = memberRepository.findAll();
+        log.info("[getAllMembers] 조회된 회원 수: {}", members.size());
+        return members.stream()
+                .map(memberMapper::toDto)
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public MemberResponseDto getMember(Long id) {
-        Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_INFO_NOT_FOUND));
-        return modelMapper.map(member, MemberResponseDto.class);
-    }
-
-
+    /**
+     * ✅ 회원 정보 수정
+     */
     @Transactional
     public MemberResponseDto updateMember(Long id, MemberUpdateDto dto) {
+        log.info("[MemberService.updateMember] 회원 정보 수정 시도 - ID={}, dto={}", id, dto);
         Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_INFO_NOT_FOUND));
+                .orElseThrow(() -> {
+                    log.error("[updateMember] 회원 조회 실패 - 존재하지 않는 ID={}", id);
+                    return new BusinessException(ErrorCode.USER_INFO_NOT_FOUND);
+                });
 
-        // 닉네임 중복
-        if (!member.getNickname().equals(dto.getNickname())
+        // 닉네임 중복 체크
+        if (dto.getNickname() != null
+                && !dto.getNickname().equals(member.getProfile().getNickname())
                 && memberRepository.existsByNickname(dto.getNickname())) {
+            log.warn("[updateMember] 중복된 닉네임으로 업데이트 시도: {}", dto.getNickname());
             throw new BusinessException(ErrorCode.DUPLICATE_NICKNAME);
         }
-        if(member.getUsername() != null ){
-            member.setUsername(dto.getUsername());
+
+        // 비밀번호 인코딩
+        String encodedPassword = null;
+        if (dto.getPassword() != null && !dto.getPassword().isEmpty()) {
+            encodedPassword = passwordEncoder.encode(dto.getPassword());
+            log.debug("[updateMember] 비밀번호 인코딩 완료 - username={}, encodedPW={}", member.getUsername(), encodedPassword);
         }
-        if(member.getNickname() != null) {
-            member.setNickname(dto.getNickname());
-        }
-        return modelMapper.map(member, MemberResponseDto.class);
+
+        // 엔티티 업데이트
+        member.update(encodedPassword, dto.getNickname(), dto.getImageUrl());
+        log.info("[updateMember] 회원 정보 수정 완료 - ID={}, username={}", member.getId(), member.getUsername());
+
+        MemberResponseDto responseDto = memberMapper.toDto(member);
+        log.debug("[updateMember] 엔티티→DTO 변환 완료: {}", responseDto);
+        return responseDto;
     }
 
+    /**
+     * ✅ 회원 삭제 (Soft Delete)
+     */
     @Transactional
     public void deleteMember(Long id) {
+        log.info("[MemberService.deleteMember] 회원 삭제 시도 - ID={}", id);
         Member member = memberRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(ErrorCode.USER_INFO_NOT_FOUND));
-        memberRepository.delete(member);
+                .orElseThrow(() -> {
+                    log.error("[deleteMember] 회원 조회 실패 - 존재하지 않는 ID={}", id);
+                    return new BusinessException(ErrorCode.USER_INFO_NOT_FOUND);
+                });
+        member.softDelete("사용자 요청에 의한 삭제");
+        log.warn("[deleteMember] 회원 소프트 삭제 완료 - ID={}, deletedAt={}", member.getId(), member.getStatusDetail().getDeletedAt());
     }
 }
-
-

@@ -2,33 +2,32 @@ package com.PickOne.domain.user.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 
-import java.time.LocalDate;
-
-@Entity
-@AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Builder
+@Embeddable
 @Getter
-@Setter
-@Table(name = "profiles")
-public class Profile extends BaseTimeEntity{
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Slf4j
+public class Profile {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "profile_id", nullable = false, updatable = false)
-    private Long id;
+    @Column(name = "nickname", nullable = false)
+    private String nickname;
 
-    @OneToOne
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;
+    @Column(name = "image_url")
+    private String imageUrl;
 
-    @Column(name = "phone_number")
-    private String phoneNumber;
+    public Profile(String nickname, String imageUrl) {
+        log.debug("[Profile 생성자] nickname={}, imageUrl={}", nickname, imageUrl);
+        this.nickname = nickname;
+        this.imageUrl = imageUrl;
+    }
 
-    @Column(name = "birth_date")
-    private LocalDate birthDate;
-
-    @Column(name = "profile_pic_url")
-    private String profilePicUrl;
+    public Profile update(String nickname, String imageUrl) {
+        log.debug("[Profile.update] 프로필 업데이트 (기존 nickname={}, 기존 imageUrl={})",
+                this.nickname, this.imageUrl);
+        return new Profile(
+                nickname != null ? nickname : this.nickname,
+                imageUrl != null ? imageUrl : this.imageUrl
+        );
+    }
 }
