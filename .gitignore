@@ -37,3 +37,6 @@ out/
 .vscode/
 application*.yml
 application-test.properties
+
+# .gitignore에 추가
+.DS_Store
